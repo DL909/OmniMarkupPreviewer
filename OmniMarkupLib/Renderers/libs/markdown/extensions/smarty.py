@@ -19,7 +19,7 @@
 #      the documentation and/or other materials provided with the
 #      distribution.
 #
-#   *  Neither the name "SmartyPants" nor the names of its contributors 
+#   *  Neither the name "SmartyPants" nor the names of its contributors
 #      may be used to endorse or promote products derived from this
 #      software without specific prior written permission.
 #
@@ -76,13 +76,13 @@ endOfWordClass = r"[\s.,;:!?)]"
 closeClass = "[^\ \t\r\n\[\{\(\-\u0002\u0003]"
 
 openingQuotesBase = (
-   '(\s'              # a  whitespace char
-   '|&nbsp;'          # or a non-breaking space entity
-   '|--'              # or dashes
-   '|–|—'             # or unicode
-   '|&[mn]dash;'      # or named dash entities
-   '|&#8211;|&#8212;' # or decimal entities
-   ')'
+    "(\s"  # a  whitespace char
+    "|&nbsp;"  # or a non-breaking space entity
+    "|--"  # or dashes
+    "|–|—"  # or unicode
+    "|&[mn]dash;"  # or named dash entities
+    "|&#8211;|&#8212;"  # or decimal entities
+    ")"
 )
 
 # Special case if the very first character is a quote
@@ -106,24 +106,25 @@ closingDoubleQuotesRegex2 = '(?<=%s)"' % closeClass
 openingSingleQuotesRegex = r"%s'(?=\w)" % openingQuotesBase
 
 # Single closing quotes:
-closingSingleQuotesRegex  = r"(?<=%s)'(?!\s|s\b|\d)" % closeClass
+closingSingleQuotesRegex = r"(?<=%s)'(?!\s|s\b|\d)" % closeClass
 closingSingleQuotesRegex2 = r"(?<=%s)'(\s|s\b)" % closeClass
 
 # All remaining quotes should be opening ones
 remainingSingleQuotesRegex = "'"
 remainingDoubleQuotesRegex = '"'
 
-lsquo, rsquo, ldquo, rdquo = '&lsquo;', '&rsquo;', '&ldquo;', '&rdquo;'
+lsquo, rsquo, ldquo, rdquo = "&lsquo;", "&rsquo;", "&ldquo;", "&rdquo;"
+
 
 class SubstituteTextPattern(HtmlPattern):
     def __init__(self, pattern, replace, markdown_instance):
-        """ Replaces matches with some text. """
+        """Replaces matches with some text."""
         HtmlPattern.__init__(self, pattern)
         self.replace = replace
         self.markdown = markdown_instance
 
     def handleMatch(self, m):
-        result = ''
+        result = ""
         for part in self.replace:
             if isinstance(part, int):
                 result += m.group(part)
@@ -131,12 +132,16 @@ class SubstituteTextPattern(HtmlPattern):
                 result += self.markdown.htmlStash.store(part, safe=True)
         return result
 
-class SmartyExtension(Extension):
-    def __init__(self, configs):
+
+import markdown
+
+
+class SmartyExtension(markdown.Extension):
+    def __init__(self, configs=[]):
         self.config = {
-            'smart_quotes': [True, 'Educate quotes'],
-            'smart_dashes': [True, 'Educate dashes'],
-            'smart_ellipses': [True, 'Educate ellipses']
+            "smart_quotes": [True, "Educate quotes"],
+            "smart_dashes": [True, "Educate dashes"],
+            "smart_ellipses": [True, "Educate ellipses"],
         }
         for key, value in configs:
             self.setConfig(key, parseBoolValue(value))
@@ -145,20 +150,21 @@ class SmartyExtension(Extension):
         for ind, pattern in enumerate(patterns):
             pattern += (md,)
             pattern = SubstituteTextPattern(*pattern)
-            after = ('>smarty-%s-%d' % (serie, ind - 1) if ind else '>entity')
-            name = 'smarty-%s-%d' % (serie, ind)
+            after = ">smarty-%s-%d" % (serie, ind - 1) if ind else ">entity"
+            name = "smarty-%s-%d" % (serie, ind)
             md.inlinePatterns.add(name, pattern, after)
 
     def educateDashes(self, md):
-        emDashesPattern = SubstituteTextPattern(r'(?<!-)---(?!-)', ('&mdash;',), md)
-        enDashesPattern = SubstituteTextPattern(r'(?<!-)--(?!-)', ('&ndash;',), md)
-        md.inlinePatterns.add('smarty-em-dashes', emDashesPattern, '>entity')
-        md.inlinePatterns.add('smarty-en-dashes', enDashesPattern,
-            '>smarty-em-dashes')
+        emDashesPattern = SubstituteTextPattern(r"(?<!-)---(?!-)", ("&mdash;",), md)
+        enDashesPattern = SubstituteTextPattern(r"(?<!-)--(?!-)", ("&ndash;",), md)
+        md.inlinePatterns.add("smarty-em-dashes", emDashesPattern, ">entity")
+        md.inlinePatterns.add("smarty-en-dashes", enDashesPattern, ">smarty-em-dashes")
 
     def educateEllipses(self, md):
-        ellipsesPattern = SubstituteTextPattern(r'(?<!\.)\.{3}(?!\.)', ('&hellip;',), md)
-        md.inlinePatterns.add('smarty-ellipses', ellipsesPattern, '>entity')
+        ellipsesPattern = SubstituteTextPattern(
+            r"(?<!\.)\.{3}(?!\.)", ("&hellip;",), md
+        )
+        md.inlinePatterns.add("smarty-ellipses", ellipsesPattern, ">entity")
 
     def educateQuotes(self, md):
         patterns = (
@@ -173,19 +179,24 @@ class SmartyExtension(Extension):
             (openingDoubleQuotesRegex, (2, ldquo)),
             (closingDoubleQuotesRegex, (rdquo,)),
             (closingDoubleQuotesRegex2, (rdquo,)),
-            (remainingDoubleQuotesRegex, (ldquo,))
+            (remainingDoubleQuotesRegex, (ldquo,)),
         )
-        self._addPatterns(md, patterns, 'quotes')
+        self._addPatterns(md, patterns, "quotes")
 
     def extendMarkdown(self, md, md_globals):
         configs = self.getConfigs()
-        if configs['smart_quotes']:
+        if configs["smart_quotes"]:
             self.educateQuotes(md)
-        if configs['smart_dashes']:
+        if configs["smart_dashes"]:
             self.educateDashes(md)
-        if configs['smart_ellipses']:
+        if configs["smart_ellipses"]:
             self.educateEllipses(md)
         md.ESCAPED_CHARS.extend(['"', "'"])
 
-def makeExtension(configs=None):
-    return SmartyExtension(configs)
+
+# def makeExtension(**kwargs):
+#     return SmartyExtension(configs)
+
+
+def makeExtension(**kwargs):
+    return SmartyExtension(**kwargs)

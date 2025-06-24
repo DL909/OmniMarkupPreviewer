@@ -25,14 +25,16 @@ from __future__ import unicode_literals
 from . import Extension
 from ..inlinepatterns import SubstituteTagPattern
 
-BR_RE = r'\n'
+BR_RE = r"\n"
+import markdown
 
-class Nl2BrExtension(Extension):
+
+class Nl2BrExtension(markdown.Extension):
 
     def extendMarkdown(self, md, md_globals):
-        br_tag = SubstituteTagPattern(BR_RE, 'br')
-        md.inlinePatterns.add('nl', br_tag, '_end')
+        br_tag = SubstituteTagPattern(BR_RE, "br")
+        md.inlinePatterns.add("nl", br_tag, "_end")
 
 
-def makeExtension(configs=None):
-    return Nl2BrExtension(configs)
+def makeExtension(**kwargs):
+    return Nl2BrExtension(**kwargs)

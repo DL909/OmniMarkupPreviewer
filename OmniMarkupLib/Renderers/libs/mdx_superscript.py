@@ -29,19 +29,28 @@ import markdown
 from markdown.inlinepatterns import SimpleTagPattern
 
 # Global Vars
-SUPERSCRIPT_RE = r'(\^)([^\^]*)\2'  # the number is a superscript^2^
+SUPERSCRIPT_RE = r"(\^)([^\^]*)\2"  # the number is a superscript^2^
 
 
 class SuperscriptExtension(markdown.Extension):
-    """ Superscript Extension for Python-Markdown. """
+    """Superscript Extension for Python-Markdown."""
 
     def extendMarkdown(self, md, md_globals):
-        """ Replace superscript with SuperscriptPattern """
-        md.inlinePatterns.add('superscript', SimpleTagPattern(SUPERSCRIPT_RE, 'sup'), '<not_strong')
+        """Replace superscript with SuperscriptPattern"""
+        md.inlinePatterns.add(
+            "superscript", SimpleTagPattern(SUPERSCRIPT_RE, "sup"), "<not_strong"
+        )
 
-def makeExtension(configs=None):
-    return SuperscriptExtension(configs=configs)
+
+# def makeExtension(configs=None):
+#     return SuperscriptExtension(configs=configs)
+
+
+def makeExtension(**kwargs):
+    return SuperscriptExtension(**kwargs)
+
 
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()

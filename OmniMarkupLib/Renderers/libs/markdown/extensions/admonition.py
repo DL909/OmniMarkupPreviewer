@@ -47,30 +47,34 @@ from ..blockprocessors import BlockProcessor
 from ..util import etree
 import re
 
+import markdown
 
-class AdmonitionExtension(Extension):
-    """ Admonition extension for Python-Markdown. """
+
+class AdmonitionExtension(markdown.Extension):
+    """Admonition extension for Python-Markdown."""
 
     def extendMarkdown(self, md, md_globals):
-        """ Add Admonition to Markdown instance. """
+        """Add Admonition to Markdown instance."""
         md.registerExtension(self)
 
-        md.parser.blockprocessors.add('admonition',
-                                      AdmonitionProcessor(md.parser),
-                                      '_begin')
+        md.parser.blockprocessors.add(
+            "admonition", AdmonitionProcessor(md.parser), "_begin"
+        )
 
 
 class AdmonitionProcessor(BlockProcessor):
 
-    CLASSNAME = 'admonition'
-    CLASSNAME_TITLE = 'admonition-title'
+    CLASSNAME = "admonition"
+    CLASSNAME_TITLE = "admonition-title"
     RE = re.compile(r'(?:^|\n)!!!\ ?([\w\-]+)(?:\ "(.*?)")?')
 
     def test(self, parent, block):
         sibling = self.lastChild(parent)
-        return self.RE.search(block) or \
-            (block.startswith(' ' * self.tab_length) and sibling and \
-                sibling.get('class', '').find(self.CLASSNAME) != -1)
+        return self.RE.search(block) or (
+            block.startswith(" " * self.tab_length)
+            and sibling
+            and sibling.get("class", "").find(self.CLASSNAME) != -1
+        )
 
     def run(self, parent, blocks):
         sibling = self.lastChild(parent)
@@ -78,18 +82,18 @@ class AdmonitionProcessor(BlockProcessor):
         m = self.RE.search(block)
 
         if m:
-            block = block[m.end() + 1:]  # removes the first line
+            block = block[m.end() + 1 :]  # removes the first line
 
         block, theRest = self.detab(block)
 
         if m:
             klass, title = self.get_class_and_title(m)
-            div = etree.SubElement(parent, 'div')
-            div.set('class', '%s %s' % (self.CLASSNAME, klass))
+            div = etree.SubElement(parent, "div")
+            div.set("class", "%s %s" % (self.CLASSNAME, klass))
             if title:
-                p = etree.SubElement(div, 'p')
+                p = etree.SubElement(div, "p")
                 p.text = title
-                p.set('class', self.CLASSNAME_TITLE)
+                p.set("class", self.CLASSNAME_TITLE)
         else:
             div = sibling
 
@@ -107,12 +111,12 @@ class AdmonitionProcessor(BlockProcessor):
             # no title was provided, use the capitalized classname as title
             # e.g.: `!!! note` will render `<p class="admonition-title">Note</p>`
             title = klass.capitalize()
-        elif title == '':
+        elif title == "":
             # an explicit blank title should not be rendered
             # e.g.: `!!! warning ""` will *not* render `p` with a title
             title = None
         return klass, title
 
 
-def makeExtension(configs={}):
-    return AdmonitionExtension(configs=configs)
+def makeExtension(**kwargs):
+    return AdmonitionExtension(**kwargs)

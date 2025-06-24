@@ -1,4 +1,4 @@
-'''
+"""
 Smart_Strong Extension for Python-Markdown
 ==========================================
 
@@ -20,23 +20,31 @@ Simple Usage:
 Copyright 2011
 [Waylan Limberg](http://achinghead.com)
 
-'''
+"""
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
 from . import Extension
 from ..inlinepatterns import SimpleTagPattern
 
-SMART_STRONG_RE = r'(?<!\w)(_{2})(?!_)(.+?)(?<!_)\2(?!\w)'
-STRONG_RE = r'(\*{2})(.+?)\2'
+SMART_STRONG_RE = r"(?<!\w)(_{2})(?!_)(.+?)(?<!_)\2(?!\w)"
+STRONG_RE = r"(\*{2})(.+?)\2"
+import markdown
+import markdown.inlinepatterns
 
-class SmartEmphasisExtension(Extension):
-    """ Add smart_emphasis extension to Markdown class."""
+
+class SmartEmphasisExtension(markdown.Extension):
+    """Add smart_emphasis extension to Markdown class."""
 
     def extendMarkdown(self, md, md_globals):
-        """ Modify inline patterns. """
-        md.inlinePatterns['strong'] = SimpleTagPattern(STRONG_RE, 'strong')
-        md.inlinePatterns.add('strong2', SimpleTagPattern(SMART_STRONG_RE, 'strong'), '>emphasis2')
+        """Modify inline patterns."""
+        md.inlinePatterns["strong"] = markdown.inlinepatterns.SimpleTagPattern(
+            SMART_STRONG_RE, "strong"
+        )
+        # md.inlinePatterns.add(
+        #     "strong", SimpleTagPattern(SMART_STRONG_RE, "strong"), ">emphasis"
+        # )
 
-def makeExtension(configs={}):
-    return SmartEmphasisExtension(configs=dict(configs))
+
+def makeExtension(**kwargs):
+    return SmartEmphasisExtension(**kwargs)

@@ -32,61 +32,86 @@ from . import Extension
 from ..blockprocessors import BlockProcessor
 from .. import util
 import re
+import OmniMarkupLib.Renderers.libs.markdown.extensions.smart_strong as smart_strong
+import OmniMarkupLib.Renderers.libs.markdown.extensions.fenced_code as fenced_code
+import OmniMarkupLib.Renderers.libs.markdown.extensions.footnotes as footnotes
+import OmniMarkupLib.Renderers.libs.markdown.extensions.attr_list as attr_list
+import OmniMarkupLib.Renderers.libs.markdown.extensions.def_list as def_list
+import OmniMarkupLib.Renderers.libs.markdown.extensions.tables as tables
+import OmniMarkupLib.Renderers.libs.markdown.extensions.abbr as abbr
 
-extensions = ['smart_strong',
-              'fenced_code',
-              'footnotes',
-              'attr_list',
-              'def_list',
-              'tables',
-              'abbr',
-              ]
+extensions = [
+    smart_strong.makeExtension(),
+    fenced_code.makeExtension(),
+    # footnotes.makeExtension(),
+    attr_list.makeExtension(),
+    def_list.makeExtension(),
+    tables.makeExtension(),
+    abbr.makeExtension(),
+]
+
+import markdown
 
 
-class ExtraExtension(Extension):
-    """ Add various extensions to Markdown class."""
+class ExtraExtension(markdown.Extension):
+    """Add various extensions to Markdown class."""
 
     def extendMarkdown(self, md, md_globals):
-        """ Register extension instances. """
+        """Register extension instances."""
         md.registerExtensions(extensions, self.config)
-        if not md.safeMode:
+        if hasattr(md, "safeMode") and not md.safeMode:
             # Turn on processing of markdown text within raw html
-            md.preprocessors['html_block'].markdown_in_raw = True
-            md.parser.blockprocessors.add('markdown_block',
-                                          MarkdownInHtmlProcessor(md.parser),
-                                          '_begin')
+            md.preprocessors["html_block"].markdown_in_raw = True
+            md.parser.blockprocessors.add(
+                "markdown_block", MarkdownInHtmlProcessor(md.parser), "_begin"
+            )
             md.parser.blockprocessors.tag_counter = -1
             md.parser.blockprocessors.contain_span_tags = re.compile(
-                r'^(p|h[1-6]|li|dd|dt|td|th|legend|address)$', re.IGNORECASE)
+                r"^(p|h[1-6]|li|dd|dt|td|th|legend|address)$", re.IGNORECASE
+            )
 
 
-def makeExtension(configs={}):
-    return ExtraExtension(configs=dict(configs))
+# def makeExtension(**kwargs):
+#     return ExtraExtension(configs=dict(configs))
+
+
+def makeExtension(**kwargs):
+    return ExtraExtension(**kwargs)
 
 
 class MarkdownInHtmlProcessor(BlockProcessor):
     """Process Markdown Inside HTML Blocks."""
+
     def test(self, parent, block):
-        return block == util.TAG_PLACEHOLDER % \
-            str(self.parser.blockprocessors.tag_counter + 1)
+        return block == util.TAG_PLACEHOLDER % str(
+            self.parser.blockprocessors.tag_counter + 1
+        )
 
     def _process_nests(self, element, block):
         """Process the element's child elements in self.run."""
         # Build list of indexes of each nest within the parent element.
         nest_index = []  # a list of tuples: (left index, right index)
         i = self.parser.blockprocessors.tag_counter + 1
-        while len(self._tag_data) > i and self._tag_data[i]['left_index']:
-            left_child_index = self._tag_data[i]['left_index']
-            right_child_index = self._tag_data[i]['right_index']
+        while len(self._tag_data) > i and self._tag_data[i]["left_index"]:
+            left_child_index = self._tag_data[i]["left_index"]
+            right_child_index = self._tag_data[i]["right_index"]
             nest_index.append((left_child_index - 1, right_child_index))
             i += 1
 
         # Create each nest subelement.
         for i, (left_index, right_index) in enumerate(nest_index[:-1]):
-            self.run(element, block[left_index:right_index],
-                     block[right_index:nest_index[i + 1][0]], True)
-        self.run(element, block[nest_index[-1][0]:nest_index[-1][1]],  # last
-                 block[nest_index[-1][1]:], True)                      # nest
+            self.run(
+                element,
+                block[left_index:right_index],
+                block[right_index : nest_index[i + 1][0]],
+                True,
+            )
+        self.run(
+            element,
+            block[nest_index[-1][0] : nest_index[-1][1]],  # last
+            block[nest_index[-1][1] :],
+            True,
+        )  # nest
 
     def run(self, parent, blocks, tail=None, nest=False):
         self._tag_data = self.parser.markdown.htmlStash.tag_data
@@ -95,28 +120,28 @@ class MarkdownInHtmlProcessor(BlockProcessor):
         tag = self._tag_data[self.parser.blockprocessors.tag_counter]
 
         # Create Element
-        markdown_value = tag['attrs'].pop('markdown')
-        element = util.etree.SubElement(parent, tag['tag'], tag['attrs'])
+        markdown_value = tag["attrs"].pop("markdown")
+        element = util.etree.SubElement(parent, tag["tag"], tag["attrs"])
 
         # Slice Off Block
         if nest:
             self.parser.parseBlocks(parent, tail)  # Process Tail
             block = blocks[1:]
         else:  # includes nests since a third level of nesting isn't supported
-            block = blocks[tag['left_index'] + 1: tag['right_index']]
-            del blocks[:tag['right_index']]
+            block = blocks[tag["left_index"] + 1 : tag["right_index"]]
+            del blocks[: tag["right_index"]]
 
         # Process Text
-        if (self.parser.blockprocessors.contain_span_tags.match(  # Span Mode
-                tag['tag']) and markdown_value != 'block') or \
-                markdown_value == 'span':
-            element.text = '\n'.join(block)
-        else:                                                     # Block Mode
+        if (
+            self.parser.blockprocessors.contain_span_tags.match(tag["tag"])  # Span Mode
+            and markdown_value != "block"
+        ) or markdown_value == "span":
+            element.text = "\n".join(block)
+        else:  # Block Mode
             i = self.parser.blockprocessors.tag_counter + 1
-            if len(self._tag_data) > i and self._tag_data[i]['left_index']:
-                first_subelement_index = self._tag_data[i]['left_index'] - 1
-                self.parser.parseBlocks(
-                    element, block[:first_subelement_index])
+            if len(self._tag_data) > i and self._tag_data[i]["left_index"]:
+                first_subelement_index = self._tag_data[i]["left_index"] - 1
+                self.parser.parseBlocks(element, block[:first_subelement_index])
                 if not nest:
                     block = self._process_nests(element, block)
             else:

@@ -94,28 +94,33 @@ from ..preprocessors import Preprocessor
 from .codehilite import CodeHilite, CodeHiliteExtension, parse_hl_lines
 import re
 
+import markdown
 
-class FencedCodeExtension(Extension):
+
+class FencedCodeExtension(markdown.Extension):
 
     def extendMarkdown(self, md, md_globals):
-        """ Add FencedBlockPreprocessor to the Markdown instance. """
+        """Add FencedBlockPreprocessor to the Markdown instance."""
         md.registerExtension(self)
 
-        md.preprocessors.add('fenced_code_block',
-                                 FencedBlockPreprocessor(md),
-                                 ">normalize_whitespace")
+        md.preprocessors.add(
+            "fenced_code_block", FencedBlockPreprocessor(md), ">normalize_whitespace"
+        )
 
 
 class FencedBlockPreprocessor(Preprocessor):
-    FENCED_BLOCK_RE = re.compile(r'''
+    FENCED_BLOCK_RE = re.compile(
+        r"""
 (?P<fence>^(?:~{3,}|`{3,}))[ ]*         # Opening ``` or ~~~
 (\{?\.?(?P<lang>[a-zA-Z0-9_+-]*))?[ ]*  # Optional {, and lang
 # Optional highlight lines, single- or double-quote-delimited
 (hl_lines=(?P<quot>"|')(?P<hl_lines>.*?)(?P=quot))?[ ]*
 }?[ ]*\n                                # Optional closing }
 (?P<code>.*?)(?<=\n)
-(?P=fence)[ ]*$''', re.MULTILINE | re.DOTALL | re.VERBOSE)
-    CODE_WRAP = '<pre><code%s>%s</code></pre>'
+(?P=fence)[ ]*$""",
+        re.MULTILINE | re.DOTALL | re.VERBOSE,
+    )
+    CODE_WRAP = "<pre><code%s>%s</code></pre>"
     LANG_TAG = ' class="%s"'
 
     def __init__(self, md):
@@ -125,7 +130,7 @@ class FencedBlockPreprocessor(Preprocessor):
         self.codehilite_conf = {}
 
     def run(self, lines):
-        """ Match and store Fenced Code Blocks in the HtmlStash. """
+        """Match and store Fenced Code Blocks in the HtmlStash."""
 
         # Check for code hilite extension
         if not self.checked_for_codehilite:
@@ -140,40 +145,42 @@ class FencedBlockPreprocessor(Preprocessor):
         while 1:
             m = self.FENCED_BLOCK_RE.search(text)
             if m:
-                lang = ''
-                if m.group('lang'):
-                    lang = self.LANG_TAG % m.group('lang')
+                lang = ""
+                if m.group("lang"):
+                    lang = self.LANG_TAG % m.group("lang")
 
                 # If config is not empty, then the codehighlite extension
                 # is enabled, so we call it to highlight the code
                 if self.codehilite_conf:
-                    highliter = CodeHilite(m.group('code'),
-                            linenums=self.codehilite_conf['linenums'][0],
-                            guess_lang=self.codehilite_conf['guess_lang'][0],
-                            css_class=self.codehilite_conf['css_class'][0],
-                            style=self.codehilite_conf['pygments_style'][0],
-                            lang=(m.group('lang') or None),
-                            noclasses=self.codehilite_conf['noclasses'][0],
-                            hl_lines=parse_hl_lines(m.group('hl_lines')))
+                    highliter = CodeHilite(
+                        m.group("code"),
+                        linenums=self.codehilite_conf["linenums"][0],
+                        guess_lang=self.codehilite_conf["guess_lang"][0],
+                        css_class=self.codehilite_conf["css_class"][0],
+                        style=self.codehilite_conf["pygments_style"][0],
+                        lang=(m.group("lang") or None),
+                        noclasses=self.codehilite_conf["noclasses"][0],
+                        hl_lines=parse_hl_lines(m.group("hl_lines")),
+                    )
 
                     code = highliter.hilite()
                 else:
-                    code = self.CODE_WRAP % (lang, self._escape(m.group('code')))
+                    code = self.CODE_WRAP % (lang, self._escape(m.group("code")))
 
-                placeholder = self.markdown.htmlStash.store(code, safe=True)
-                text = '%s\n%s\n%s'% (text[:m.start()], placeholder, text[m.end():])
+                placeholder = self.markdown.htmlStash.store(code)
+                text = "%s\n%s\n%s" % (text[: m.start()], placeholder, text[m.end() :])
             else:
                 break
         return text.split("\n")
 
     def _escape(self, txt):
-        """ basic html escaping """
-        txt = txt.replace('&', '&amp;')
-        txt = txt.replace('<', '&lt;')
-        txt = txt.replace('>', '&gt;')
-        txt = txt.replace('"', '&quot;')
+        """basic html escaping"""
+        txt = txt.replace("&", "&amp;")
+        txt = txt.replace("<", "&lt;")
+        txt = txt.replace(">", "&gt;")
+        txt = txt.replace('"', "&quot;")
         return txt
 
 
-def makeExtension(configs=None):
-    return FencedCodeExtension(configs=configs)
+def makeExtension(**kwargs):
+    return FencedCodeExtension(**kwargs)

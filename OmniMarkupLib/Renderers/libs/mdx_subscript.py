@@ -19,19 +19,28 @@ import markdown
 from markdown.inlinepatterns import SimpleTagPattern
 
 # Global Vars
-SUBSCRIPT_RE = r'(\~)([^\~]*)\2'  # the number is subscript~2~
+SUBSCRIPT_RE = r"(\~)([^\~]*)\2"  # the number is subscript~2~
 
 
 class SubscriptExtension(markdown.Extension):
-    """ Subscript Extension for Python-Markdown. """
+    """Subscript Extension for Python-Markdown."""
 
     def extendMarkdown(self, md, md_globals):
-        """ Replace subscript with SubscriptPattern """
-        md.inlinePatterns.add('subscript', SimpleTagPattern(SUBSCRIPT_RE, 'sub'), '<not_strong')
+        """Replace subscript with SubscriptPattern"""
+        md.inlinePatterns.add(
+            "subscript", SimpleTagPattern(SUBSCRIPT_RE, "sub"), "<not_strong"
+        )
 
-def makeExtension(configs=None):
-    return SubscriptExtension(configs=configs)
+
+# def makeExtension(configs=None):
+#     return SubscriptExtension(configs=configs)
+
+
+def makeExtension(**kwargs):
+    return SubscriptExtension(**kwargs)
+
 
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()
