@@ -5,6 +5,8 @@ OmniMarkupPreviewer
 
 fixed some bugs and it runs well on my computer
 
+Note that now configure markdown feature is useless, I fixed this in code for convinience.
+
 Description
 -----------
 
